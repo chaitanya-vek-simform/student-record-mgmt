@@ -1,0 +1,12 @@
+BATCH_STATE.md
+gpt/*
+.env.example
+.env
+database.env
+/Report 1
+/report
+/Artifacts
+/Reporting
+/Reporting/*
+/nginx
+/nginx/*

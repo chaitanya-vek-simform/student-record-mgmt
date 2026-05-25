@@ -1,0 +1,82 @@
+services:
+  database:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: database
+    env_file:
+      - database.env
+    volumes:
+      - db_data:/var/opt/mssql
+    ports:
+      - "1433:1433"
+    networks:
+      - backend_network
+
+  database_init:
+    image: mcr.microsoft.com/mssql-tools
+    container_name: database_init
+    env_file:
+      - database.env
+    depends_on:
+      - database
+    volumes:
+      - ./database_setup.sql:/init.sql
+    command: >
+      /bin/sh -c "
+      for i in `seq 1 60`; do
+        /opt/mssql-tools/bin/sqlcmd -S database -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" && break;
+        echo 'Waiting for SQL Server startup...';
+        sleep 2;
+      done;
+      /opt/mssql-tools/bin/sqlcmd -S database -U sa -P \"$$MSSQL_SA_PASSWORD\" -d master -i /init.sql
+      "
+    restart: "no"
+    networks:
+      - backend_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: backend
+    env_file:
+      - backend/.env
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-change_me_super_secret}
+      - FRONTEND_ORIGIN=${FRONTEND_ORIGIN:-http://localhost:8080}
+    depends_on:
+      - database_init
+    networks:
+      - backend_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=/api
+    container_name: frontend
+    networks:
+      - frontend_network
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: nginx_proxy
+    ports:
+      - "8080:80"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - frontend_network
+      - backend_network
+
+networks:
+  frontend_network:
+    driver: bridge
+  backend_network:
+    driver: bridge
+
+volumes:
+  db_data:
