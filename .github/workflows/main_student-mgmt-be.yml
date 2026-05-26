@@ -8,9 +8,9 @@ on:
     branches:
       - main
     paths:
-      - 'backend/**'        # Only trigger when backend code changes
+      - 'backend/**'
       - '.github/workflows/main_student-mgmt-be.yml'
-  workflow_dispatch:        # Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
 
 jobs:
   build:
