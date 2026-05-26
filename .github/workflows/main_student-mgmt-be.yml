@@ -44,7 +44,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     permissions:
-      id-token: write
       contents: read
 
     steps:
@@ -53,17 +52,11 @@ jobs:
         with:
           name: node-app
 
-      - name: Login to Azure
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D87F6BB0C818475994FC8FF165F86687 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_B3CD6E0A3DA34DCC9EAEDC9FBA9C64A5 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_C842117235A845508A30253CBFA329F4 }}
-
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'student-mgmt-be'
           slot-name: 'Production'
-          package: .                      # artifact was downloaded to current dir
+          package: .
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
